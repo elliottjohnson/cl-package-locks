@@ -3,8 +3,9 @@
 (in-package #:cl-package-locks)
 
 (defun resolve-package (package)
+  "Accepts multiple types of arguments and returns a package 
+if found or errors if the type can not be resolved to a package.."
   (assert (atom package))
-  "Accepts multiple types of arguments and returns a package or nil."
   (etypecase package
     (package package)
     (symbol (find-package package))
