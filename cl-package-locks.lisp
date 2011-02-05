@@ -3,34 +3,27 @@
 (in-package #:cl-package-locks)
 
 (defun resolve-package (package)
-  "Accepts multiple types of arguments and returns a package 
-if found or errors if the type can not be resolved to a package.."
-  (assert (atom package))
+  "Resolves a descriptor to a package object."
   (etypecase package
     (package package)
-    (symbol (find-package package))
-    (string (find-package (intern (string-upcase package)
-				  (find-package 'keyword))))))
+    (symbol (find-package package))))
 
 (defun resolve-packages (packages)
-  "Resolves a list of package names to a list of packages or errors otherwise."
-  (assert (listp packages))
-  (let ((pkgs (mapcar #'resolve-package packages)))
-    (unless (every #'packagep pkgs)
-      (error "Failed to resolve packages ~S to ~S!" packages pkgs))
-    pkgs))
+  "Resolves a list of packages."
+  (mapcar #'resolve-package packages))
 
 (defun package-locked-p (package)
   "Returns true if a given resolveable PACKAGE is locked."
   (assert (atom package))
   (let ((pkg (resolve-package package)))
-    #+allegro (values (excl:package-lock pkg) 
-		      (excl:package-definition-lock pkg))
-    #+clisp (ext:package-lock pkg)
-    #+cmucl (values (ext:package-lock pkg)
-		    (ext:package-definition-lock pkg))
-    #+sb-package-locks (sb-ext:package-locked-p pkg)
-    #-(or allegro clisp cmucl sb-package-locks) nil))
+    (when pkg
+      #+allegro (values (excl:package-lock pkg) 
+			(excl:package-definition-lock pkg))
+      #+clisp (ext:package-lock pkg)
+      #+cmucl (values (ext:package-lock pkg)
+		      (ext:package-definition-lock pkg))
+      #+sb-package-locks (sb-ext:package-locked-p pkg)
+      #-(or allegro clisp cmucl sb-package-locks) nil)))
 
 (defun locked-packages (packages)
   "Accepts a list of packages and returns those that are locked."
@@ -70,8 +63,8 @@ if found or errors if the type can not be resolved to a package.."
 (defun lock-packages (packages)
   "Locks the provided packages."
   (assert (listp packages))
-  (loop for package in packages
-     do (lock-package package)))
+  (dolist (package (resolve-packages packages))
+    (lock-package package)))
 
 (defun unlock-package (package)
   "Unlocks a provided package."
@@ -89,8 +82,8 @@ if found or errors if the type can not be resolved to a package.."
 (defun unlock-packages (packages)
   "Unlocks the provided packages."
   (assert (listp packages))
-  (loop for package in packages
-       do (unlock-package package)))
+  (dolist (package (resolve-packages packages))
+    (unlock-package package)))
 
 (defmacro with-packages-unlocked (packages &body body)
   "Accepts a list of packages that be unlocked for the duration 

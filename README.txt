@@ -58,15 +58,15 @@ without-package-locks to see if I'm missing anything important .
 (package-locked-p :cl-user)
 
 ; Locking a package
-(lock-package "cl-user")
+(lock-package (find-package :cl-user))
 
 ; Unlocking a package, notice that packages can be described 
-; in several different ways (currently string, symbol & package).
+; in several different ways (currently symbol & package).
 (unlock-package 'cl-user)
 
 ; Working on lists of packages.  The RESOLVE-PACKAGES function
 ; converts a list of package descriptors to packages or errors.
-(let ((pkgs (resolve-packages '("cl-package-locks" :swank))))
+(let ((pkgs (resolve-packages '(:cl-package-locks :swank))))
   (lock-packages pkgs)
   ; your code here
   (unlock-packages))
